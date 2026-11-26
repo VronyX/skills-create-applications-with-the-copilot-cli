@@ -1,6 +1,6 @@
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
-const { calculate } = require("../calculator");
+const { calculate, modulo, power, squareRoot } = require("../calculator");
 
 describe("calculate", () => {
   test.each([
@@ -8,6 +8,10 @@ describe("calculate", () => {
     [10, "-", 4, 6],
     [45, "*", 2, 90],
     [20, "/", 5, 4],
+    [5, "%", 2, 1],
+    [2, "^", 3, 8],
+    [2, "**", 3, 8],
+    [2, "**", 0, 1],
   ])("calculates %p %s %p as %p", (left, operator, right, expected) => {
     expect(calculate(left, operator, right)).toBe(expected);
   });
@@ -30,7 +34,24 @@ describe("calculate", () => {
     expect(() => calculate(1, "/", -0)).toThrow("Cannot divide by zero.");
   });
 
-  test.each(["%", "toString", "__proto__"])(
+  test("rejects modulo by zero", () => {
+    expect(() => calculate(1, "%", 0)).toThrow(
+      "Cannot calculate modulo by zero.",
+    );
+    expect(() => modulo(1, -0)).toThrow("Cannot calculate modulo by zero.");
+  });
+
+  test("exports modulo, power, and square root functions", () => {
+    expect(modulo(5, 2)).toBe(1);
+    expect(power(2, 3)).toBe(8);
+    expect(squareRoot(16)).toBe(4);
+    expect(squareRoot(0)).toBe(0);
+    expect(() => squareRoot(-1)).toThrow(
+      "Cannot calculate the square root of a negative number.",
+    );
+  });
+
+  test.each(["xor", "toString", "__proto__"])(
     "rejects unsupported operation %s",
     (operator) => {
       expect(() => calculate(1, operator, 2)).toThrow(
@@ -48,6 +69,10 @@ describe("calculator CLI", () => {
     [["10", "-", "4"], "6"],
     [["45", "*", "2"], "90"],
     [["20", "/", "5"], "4"],
+    [["5", "%", "2"], "1"],
+    [["2", "^", "3"], "8"],
+    [["2", "**", "3"], "8"],
+    [["sqrt", "16"], "4"],
   ])("prints the result for %p", (args, expected) => {
     const result = spawnSync(process.execPath, [calculatorPath, ...args], {
       encoding: "utf8",
@@ -61,8 +86,10 @@ describe("calculator CLI", () => {
   test.each([
     [[], "Usage:"],
     [["abc", "+", "1"], "Both operands must be valid numbers."],
-    [["1", "%", "2"], "Unsupported operation: %"],
+    [["1", "xor", "2"], "Unsupported operation: xor"],
     [["1", "/", "0"], "Cannot divide by zero."],
+    [["sqrt", "-1"], "Cannot calculate the square root of a negative number."],
+    [["1", "%", "0"], "Cannot calculate modulo by zero."],
   ])("reports errors for arguments %p", (args, expectedError) => {
     const result = spawnSync(process.execPath, [calculatorPath, ...args], {
       encoding: "utf8",

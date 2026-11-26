@@ -1,12 +1,33 @@
 #!/usr/bin/env node
 
-// Supported operations: addition (+), subtraction (-), multiplication (*), and division (/).
+function modulo(a, b) {
+  if (b === 0) {
+    throw new Error("Cannot calculate modulo by zero.");
+  }
+  return a % b;
+}
+
+function power(base, exponent) {
+  return base ** exponent;
+}
+
+function squareRoot(n) {
+  if (n < 0) {
+    throw new Error("Cannot calculate the square root of a negative number.");
+  }
+  return Math.sqrt(n);
+}
+
+// Supported operations: addition (+), subtraction (-), multiplication (*), division (/), modulo (%), and exponentiation (^ or **).
 function calculate(left, operator, right) {
   const operations = {
     "+": (a, b) => a + b,
     "-": (a, b) => a - b,
     "*": (a, b) => a * b,
     "/": (a, b) => a / b,
+    "%": modulo,
+    "^": power,
+    "**": power,
   };
 
   if (!Object.prototype.hasOwnProperty.call(operations, operator)) {
@@ -21,8 +42,25 @@ function calculate(left, operator, right) {
 }
 
 function main(args) {
+  if (args.length === 2 && args[0] === "sqrt") {
+    const input = args[1];
+    if (input.trim() === "") {
+      throw new Error("The operand must be a valid number.");
+    }
+
+    const value = Number(input);
+    if (!Number.isFinite(value)) {
+      throw new Error("The operand must be a valid number.");
+    }
+
+    console.log(squareRoot(value));
+    return;
+  }
+
   if (args.length !== 3) {
-    throw new Error("Usage: node src/calculator.js <number> <+|-|*|/> <number>");
+    throw new Error(
+      "Usage: node src/calculator.js <number> <+|-|*|/|%|^|**> <number> | sqrt <number>",
+    );
   }
 
   const [leftInput, operator, rightInput] = args;
@@ -48,4 +86,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { calculate };
+module.exports = { calculate, modulo, power, squareRoot };
